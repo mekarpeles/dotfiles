@@ -1,39 +1,82 @@
+;; -*-lisp-*-
 (in-package :stumpwm)
+;(load "/home/stefan/work/git/stumpwm/contrib/net.lisp")
+;(load "/home/stefan/work/git/stumpwm/contrib/cpu.lisp")
+(set-prefix-key (kbd "C-j"))
+(setf *mouse-focus-policy* :click)
 
-(stumpwm:set-prefix-key (stumpwm:kbd "C-j"))
+;; load a few modules
+(mapcar #'load-module '("cpu"
+                        "mem"
+                        "battery-portable"
+                        "net"
+                        "wifi"
+                        "disk"))
 
-(defcommand emacs () ()
-  "run emacs"
-  (run-or-raise "emacs-snapshot -T emacs" '(:title "emacs")))
+(defconstant *day-names*
+  '("Mon" "Tue" "Wed" "Thu" "Fri" "Sat" "Sun"))
 
-(defcommand firefox () ()
-  "run firefox"
-  (run-or-raise "firefox" '(:class "Firefox")))
+(defun current-date ()
+  "Returns the date formatted as `2009-11-16 Mon 11:34:03'."
+  (multiple-value-bind
+      (second minute hour date month year day-of-week dst-p tz)
+      (get-decoded-time)
+    (format nil "~d-~2,'0d-~2,'0d ~a ^B~2,'0d:~2,'0d:~2,'0d^b"
+            year month date (nth day-of-week *day-names*)
+            hour minute second)))
 
-(defcommand chromium () ()
-  "run chromium"
-  (run-or-raise "chromium-browser" '(:instance "chromium-browser")))
+;; FIXME ppp0 comes after lo0; hence, the IP is wrong
+(defun current-ip ()
+  "Returns the IP address in CIDR notation."
+  (run-shell-command
+   "IP_ADDRESS=`ifconfig | grep 'inet addr:' | head -n 1 | sed 's/.*addr:\\([0-9.]*\\).*/\\1/'`; NETMASK=`ifconfig | grep 'inet addr:' | head -n 1 | sed 's/.*Mask:\\([0-9.]*\\).*/\\1/'`; NETWORK=`ipcalc -n -b $IP_ADDRESS $NETMASK | grep Network | awk '{print $2}'`; echo -n IP:$IP_ADDRESS`echo $NETWORK | sed 's/.*\\(\\/.*\\)/\\1/g' | tr -d '[:cntrl:]'`"
+   t))
 
-(defcommand aumix () ()
-  "run aumix"
-  (run-or-raise "xterm -name aumix -e aumix" '(:instance "aumix")))
+(defun current-gw ()
+  "Returns the default gateway."
+  (run-shell-command
+   "echo -n Gw:`ip route show | grep default | awk '{print $3}' | tr -d '[:cntrl:]'`"
+   t))
 
-(defcommand xterm-1 () ()
-  "run an xterm instance"
-  (run-or-raise "xterm -name xterm1 -e 'cd /data/txt && zsh'" '(:instance "xterm1")))
+;; TODO Get this in a lighter manner, by parsing /proc/net/route. See, for
+;; example, contribs/net.lisp.
 
-(defcommand xterm-2 () ()
-  "run an xterm instance"
-  (run-or-raise "xterm -name xterm2" '(:instance "xterm2")))
-;; Turn on the modeline
+
+;; %h :: List the number of the head the mode-line belongs to
+;; %w :: List all windows in the current group windows using `*window-format*'
+;; %W :: List all windows on the current head of the current group using `*window-format*'
+;; %g :: List the groups using `*group-format*'
+
+;; colors
+;; 0 = black, 1 = red, 2 = green, 3 = yellow,
+;; 4 = blue, 5 = magenta, 6 = cyan, 7 = white
+
+;; %N :: notifications
+;; what's `^n'?
+;; what's `%48'?
+
+;; Turn on the modeline                                                                                                                                                   
 (if (not (head-mode-line (current-head)))
      (toggle-mode-line (current-screen) (current-head)))
 
-
 ;; Show time, cpu usage and network traffic in the modeline
 (setf *screen-mode-line-format*
-      (list '(:eval (run-shell-command "date '+%R, %F %a'|tr -d [:cntrl:]" t)) " | %t | %c| %l | [^B%n^b] %W"))
+      (list '(:eval (run-shell-command "date '+%R, %F %a'|tr -d [:cntrl:]" t)) " | %t | %c| %l | %B | [^B%n^b] %W"))
 
-(setf *mouse-focus-policy* :sloppy)
+;; what will be displayed on the modeline (sort of taskbar) for each screen
+;; FIXME `run-shell-command' in mode-line could be the source of StumpWM crashes?
+;(setf *screen-mode-line-format*
+;      (list
+;       ;; date
+;       "^6*" '(:eval (current-date)) ; defined above
+;       ;; cpu | mem | battery
+;       " | %D | %c %C (%f) %t | %M | %B"
+;
+;       ;; ip and gw
+;       " | " '(:eval (current-ip)) " " '(:eval (current-gw)) ; defined above
+;       ;; net | wifi
+;      " | %l | %I"
+;      '(:eval (run-shell-command "echo" t))
+;       "^2*" "[^B%n^b] %W%48"))
 
-(run-shell-command "tilda & ")
+(run-shell-command "tilda &")
