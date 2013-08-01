@@ -1,0 +1,39 @@
+(in-package :stumpwm)
+
+(stumpwm:set-prefix-key (stumpwm:kbd "C-j"))
+
+(defcommand emacs () ()
+  "run emacs"
+  (run-or-raise "emacs-snapshot -T emacs" '(:title "emacs")))
+
+(defcommand firefox () ()
+  "run firefox"
+  (run-or-raise "firefox" '(:class "Firefox")))
+
+(defcommand chromium () ()
+  "run chromium"
+  (run-or-raise "chromium-browser" '(:instance "chromium-browser")))
+
+(defcommand aumix () ()
+  "run aumix"
+  (run-or-raise "xterm -name aumix -e aumix" '(:instance "aumix")))
+
+(defcommand xterm-1 () ()
+  "run an xterm instance"
+  (run-or-raise "xterm -name xterm1 -e 'cd /data/txt && zsh'" '(:instance "xterm1")))
+
+(defcommand xterm-2 () ()
+  "run an xterm instance"
+  (run-or-raise "xterm -name xterm2" '(:instance "xterm2")))
+;; Turn on the modeline
+(if (not (head-mode-line (current-head)))
+     (toggle-mode-line (current-screen) (current-head)))
+
+
+;; Show time, cpu usage and network traffic in the modeline
+(setf *screen-mode-line-format*
+      (list '(:eval (run-shell-command "date '+%R, %F %a'|tr -d [:cntrl:]" t)) " | %t | %c| %l | [^B%n^b] %W"))
+
+(setf *mouse-focus-policy* :sloppy)
+
+(run-shell-command "tilda & ")
