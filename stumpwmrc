@@ -41,7 +41,6 @@
 ;; TODO Get this in a lighter manner, by parsing /proc/net/route. See, for
 ;; example, contribs/net.lisp.
 
-
 ;; %h :: List the number of the head the mode-line belongs to
 ;; %w :: List all windows in the current group windows using `*window-format*'
 ;; %W :: List all windows on the current head of the current group using `*window-format*'
@@ -55,7 +54,7 @@
 ;; what's `^n'?
 ;; what's `%48'?
 
-;; Turn on the modeline                                                                                                                                                   
+;; Turn on the modeline
 (if (not (head-mode-line (current-head)))
      (toggle-mode-line (current-screen) (current-head)))
 
@@ -63,20 +62,13 @@
 (setf *screen-mode-line-format*
       (list '(:eval (run-shell-command "date '+%R, %F %a'|tr -d [:cntrl:]" t)) " | %t | %c| %l | %B | [^B%n^b] %W"))
 
-;; what will be displayed on the modeline (sort of taskbar) for each screen
-;; FIXME `run-shell-command' in mode-line could be the source of StumpWM crashes?
-;(setf *screen-mode-line-format*
-;      (list
-;       ;; date
-;       "^6*" '(:eval (current-date)) ; defined above
-;       ;; cpu | mem | battery
-;       " | %D | %c %C (%f) %t | %M | %B"
-;
-;       ;; ip and gw
-;       " | " '(:eval (current-ip)) " " '(:eval (current-gw)) ; defined above
-;       ;; net | wifi
-;      " | %l | %I"
-;      '(:eval (run-shell-command "echo" t))
-;       "^2*" "[^B%n^b] %W%48"))
 
 (run-shell-command "tilda &")
+(run-shell-command "xbindkeys")
+
+(define-stumpwm-command "reload-all" ()
+  (run-commands
+   "reload"
+   "loadrc"))
+
+(load-module "stumptray")

@@ -1,1 +1,0 @@
-apt-get install git-core emacs python-pip tilda tmux screen stumpwm openssh-server chromium-browser firefox vlc
